@@ -50,6 +50,59 @@ impl<'a> NodeData<'a> {
         }
     }
 
+    pub fn forward(&self) { 
+        use NodeType::*;
+
+        self.value.set(match self.type_ {
+            Const(v) => v,
+            Var(_) => self.value.get(),
+            Neg(value) => {
+                value.forward();
+
+                -value.value.get()
+            },
+            Add(lhs, rhs) => {
+                lhs.forward();
+                rhs.forward();
+
+                lhs.value.get() + rhs.value.get()
+            },
+            Sub(lhs, rhs) => {
+                lhs.forward();
+                rhs.forward();
+
+                lhs.value.get() - rhs.value.get()
+            },
+            Mul(lhs, rhs) => {
+                lhs.forward();
+                rhs.forward();
+
+                lhs.value.get() * rhs.value.get()
+            },
+            Div(lhs, rhs) => {
+                lhs.forward();
+                rhs.forward();
+
+                lhs.value.get() / rhs.value.get()
+            },
+            Pow(lhs, rhs) => {
+                lhs.forward();
+
+                lhs.value.get().powf(rhs)
+            },
+            Sin(value) => {
+                value.forward();
+
+                value.value.get().sin()
+            },
+            Cos(value) => {
+                value.forward();
+
+                value.value.get().cos()
+            },
+        })
+    }
+
     pub fn backward_ad(&self, variables: &[&str]) {
         use NodeType::*;
 
@@ -182,23 +235,6 @@ pub fn cos<'a>(arena: &'a Arena<'a>, value: Node<'a>) -> Node<'a> {
     arena.alloc(NodeType::Cos(value).into())
 }
 
-pub fn forward<'a>(node: Node<'a>, assignment: &HashMap<String, f32>) -> Option<f32> { 
-    use NodeType::*;
-
-    match node.type_ {
-        Const(v) => Some(v),
-        Var(ref name) => assignment.get(name).cloned(),
-        Neg(value) => forward(value, assignment).map(|value| -value),
-        Add(lhs, rhs) => forward(lhs, assignment).and_then(|lhs| forward(rhs, assignment).map(|rhs| lhs + rhs)),
-        Sub(lhs, rhs) => forward(lhs, assignment).and_then(|lhs| forward(rhs, assignment).map(|rhs| lhs - rhs)),
-        Mul(lhs, rhs) => forward(lhs, assignment).and_then(|lhs| forward(rhs, assignment).map(|rhs| lhs * rhs)),
-        Div(lhs, rhs) => forward(lhs, assignment).and_then(|lhs| forward(rhs, assignment).map(|rhs| lhs / rhs)),
-        Pow(lhs, rhs) => forward(lhs, assignment).map(|lhs| lhs.powf(rhs)),
-        Sin(value) => forward(value, assignment).map(f32::sin),
-        Cos(value) => forward(value, assignment).map(f32::cos),
-    }
-}
-
 #[test]
 fn basic_forward() {
     let arena = Arena::new();
@@ -212,15 +248,14 @@ fn basic_forward() {
     let add = add(arena, mul, div);
     let sub = sub(arena, mul, div);
 
-    let assignment = {
-        let mut assignment = HashMap::new();
-        assignment.insert("x".to_string(), 8f32);
-        assignment.insert("y".to_string(), 4f32);
-        assignment
-    };
+    x.value.set(8f32);
+    y.value.set(4f32);
 
-    assert_eq!(forward(add, &assignment), Some(34f32));
-    assert_eq!(forward(sub, &assignment), Some(30f32));
+    add.forward();
+    sub.forward();
+
+    assert_eq!(add.value.get(), 34f32);
+    assert_eq!(sub.value.get(), 30f32);
 }
 
 #[test]
@@ -238,6 +273,9 @@ fn basic_backward_ad() {
 
     x.value.set(8f32);
     y.value.set(4f32);
+
+    add.forward();
+    sub.forward();
 
     add.backward_ad(&["x", "y"]);
     sub.backward_ad(&["x", "y"]);

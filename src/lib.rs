@@ -223,3 +223,29 @@ fn basic_forward() {
     assert_eq!(forward(sub, &assignment), Some(30f32));
 }
 
+#[test]
+fn basic_backward_ad() {
+    let arena = Arena::new();
+    let arena = &arena;
+
+    let x = var(arena, "x".to_string());
+    let y = var(arena, "y".to_string());
+
+    let mul = mul(arena, x, y);
+    let div = div(arena, x, y);
+    let add = add(arena, mul, div);
+    let sub = sub(arena, mul, div);
+
+    x.value.set(8f32);
+    y.value.set(4f32);
+
+    add.backward_ad(&["x", "y"]);
+    sub.backward_ad(&["x", "y"]);
+
+    assert_eq!(add.grads.borrow()["x"], 4.25);
+    assert_eq!(add.grads.borrow()["y"], 7.5);
+
+    assert_eq!(sub.grads.borrow()["x"], 3.75);
+    assert_eq!(sub.grads.borrow()["y"], 8.5);
+}
+

@@ -4,7 +4,7 @@ use typed_arena::Arena;
 use std::collections::HashMap;
 
 #[derive(Debug)]
-pub enum NodeData<'a> {
+pub enum NodeType<'a> {
     Const(f32),
     Var(String),
     Neg(Node<'a>),
@@ -16,46 +16,46 @@ pub enum NodeData<'a> {
     Sin(Node<'a>),
     Cos(Node<'a>),
 }
-type Node<'a> = &'a NodeData<'a>;
+type Node<'a> = &'a NodeType<'a>;
 
-pub fn constant<'a>(arena: &'a Arena<NodeData<'a>>, value: f32) -> Node<'a> {
-    arena.alloc(NodeData::Const(value))
+pub fn constant<'a>(arena: &'a Arena<NodeType<'a>>, value: f32) -> Node<'a> {
+    arena.alloc(NodeType::Const(value))
 }
 
-pub fn var<'a>(arena: &'a Arena<NodeData<'a>>, name: String) -> Node<'a> {
-    arena.alloc(NodeData::Var(name))
+pub fn var<'a>(arena: &'a Arena<NodeType<'a>>, name: String) -> Node<'a> {
+    arena.alloc(NodeType::Var(name))
 }
 
-pub fn add<'a>(arena: &'a Arena<NodeData<'a>>, lhs: Node<'a>, rhs: Node<'a>) -> Node<'a> {
-    arena.alloc(NodeData::Add(lhs, rhs))
+pub fn add<'a>(arena: &'a Arena<NodeType<'a>>, lhs: Node<'a>, rhs: Node<'a>) -> Node<'a> {
+    arena.alloc(NodeType::Add(lhs, rhs))
 }
 
-pub fn sub<'a>(arena: &'a Arena<NodeData<'a>>, lhs: Node<'a>, rhs: Node<'a>) -> Node<'a> {
-    arena.alloc(NodeData::Sub(lhs, rhs))
+pub fn sub<'a>(arena: &'a Arena<NodeType<'a>>, lhs: Node<'a>, rhs: Node<'a>) -> Node<'a> {
+    arena.alloc(NodeType::Sub(lhs, rhs))
 }
 
-pub fn mul<'a>(arena: &'a Arena<NodeData<'a>>, lhs: Node<'a>, rhs: Node<'a>) -> Node<'a> {
-    arena.alloc(NodeData::Mul(lhs, rhs))
+pub fn mul<'a>(arena: &'a Arena<NodeType<'a>>, lhs: Node<'a>, rhs: Node<'a>) -> Node<'a> {
+    arena.alloc(NodeType::Mul(lhs, rhs))
 }
 
-pub fn div<'a>(arena: &'a Arena<NodeData<'a>>, lhs: Node<'a>, rhs: Node<'a>) -> Node<'a> {
-    arena.alloc(NodeData::Div(lhs, rhs))
+pub fn div<'a>(arena: &'a Arena<NodeType<'a>>, lhs: Node<'a>, rhs: Node<'a>) -> Node<'a> {
+    arena.alloc(NodeType::Div(lhs, rhs))
 }
 
-pub fn pow<'a>(arena: &'a Arena<NodeData<'a>>, lhs: Node<'a>, rhs: f32) -> Node<'a> {
-    arena.alloc(NodeData::Pow(lhs, rhs))
+pub fn pow<'a>(arena: &'a Arena<NodeType<'a>>, lhs: Node<'a>, rhs: f32) -> Node<'a> {
+    arena.alloc(NodeType::Pow(lhs, rhs))
 }
 
-pub fn sin<'a>(arena: &'a Arena<NodeData<'a>>, value: Node<'a>) -> Node<'a> {
-    arena.alloc(NodeData::Sin(value))
+pub fn sin<'a>(arena: &'a Arena<NodeType<'a>>, value: Node<'a>) -> Node<'a> {
+    arena.alloc(NodeType::Sin(value))
 }
 
-pub fn cos<'a>(arena: &'a Arena<NodeData<'a>>, value: Node<'a>) -> Node<'a> {
-    arena.alloc(NodeData::Cos(value))
+pub fn cos<'a>(arena: &'a Arena<NodeType<'a>>, value: Node<'a>) -> Node<'a> {
+    arena.alloc(NodeType::Cos(value))
 }
 
 pub fn forward<'a>(node: Node<'a>, assignment: &HashMap<String, f32>) -> Option<f32> { 
-    use NodeData::*;
+    use NodeType::*;
 
     match *node {
         Const(v) => Some(v),

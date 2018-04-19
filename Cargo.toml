@@ -1,0 +1,7 @@
+[package]
+name = "ad"
+version = "0.1.0"
+authors = ["pandaman64 <kointosudesuyo@infoseek.jp>"]
+
+[dependencies]
+typed-arena = "1.3.0"

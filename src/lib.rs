@@ -41,16 +41,16 @@ impl<'a> NodeData<'a> {
 
         self.grads.borrow_mut().clear();
         match self.type_ {
-            Const(_) | Var(_) => {},
+            Const(_) | Var(_) => {}
             Neg(value) | Pow(value, _) | Sin(value) | Cos(value) => value.reset_grads(),
             Add(lhs, rhs) | Sub(lhs, rhs) | Mul(lhs, rhs) | Div(lhs, rhs) => {
                 lhs.reset_grads();
                 rhs.reset_grads();
-            },
+            }
         }
     }
 
-    pub fn forward(&self) { 
+    pub fn forward(&self) {
         use NodeType::*;
 
         self.value.set(match self.type_ {
@@ -60,46 +60,46 @@ impl<'a> NodeData<'a> {
                 value.forward();
 
                 -value.value.get()
-            },
+            }
             Add(lhs, rhs) => {
                 lhs.forward();
                 rhs.forward();
 
                 lhs.value.get() + rhs.value.get()
-            },
+            }
             Sub(lhs, rhs) => {
                 lhs.forward();
                 rhs.forward();
 
                 lhs.value.get() - rhs.value.get()
-            },
+            }
             Mul(lhs, rhs) => {
                 lhs.forward();
                 rhs.forward();
 
                 lhs.value.get() * rhs.value.get()
-            },
+            }
             Div(lhs, rhs) => {
                 lhs.forward();
                 rhs.forward();
 
                 lhs.value.get() / rhs.value.get()
-            },
+            }
             Pow(lhs, rhs) => {
                 lhs.forward();
 
                 lhs.value.get().powf(rhs)
-            },
+            }
             Sin(value) => {
                 value.forward();
 
                 value.value.get().sin()
-            },
+            }
             Cos(value) => {
                 value.forward();
 
                 value.value.get().cos()
-            },
+            }
         })
     }
 
@@ -122,7 +122,7 @@ impl<'a> NodeData<'a> {
                 for v in variables {
                     grads.insert(v.to_string(), 0f32);
                 }
-            },
+            }
             Var(ref this) => {
                 for v in variables {
                     if this == v {
@@ -131,67 +131,91 @@ impl<'a> NodeData<'a> {
                         grads.insert(v.to_string(), 0f32);
                     }
                 }
-            },
+            }
             Neg(value) => {
                 value.backward_ad(variables);
 
                 for v in variables {
                     grads.insert(v.to_string(), -value.grads.borrow()[*v]);
                 }
-            },
+            }
             Add(lhs, rhs) => {
                 lhs.backward_ad(variables);
                 rhs.backward_ad(variables);
 
                 for v in variables {
-                    grads.insert(v.to_string(), lhs.grads.borrow()[*v] + rhs.grads.borrow()[*v]);
+                    grads.insert(
+                        v.to_string(),
+                        lhs.grads.borrow()[*v] + rhs.grads.borrow()[*v],
+                    );
                 }
-            },
+            }
             Sub(lhs, rhs) => {
                 lhs.backward_ad(variables);
                 rhs.backward_ad(variables);
 
                 for v in variables {
-                    grads.insert(v.to_string(), lhs.grads.borrow()[*v] - rhs.grads.borrow()[*v]);
+                    grads.insert(
+                        v.to_string(),
+                        lhs.grads.borrow()[*v] - rhs.grads.borrow()[*v],
+                    );
                 }
-            },
+            }
             Mul(lhs, rhs) => {
                 lhs.backward_ad(variables);
                 rhs.backward_ad(variables);
 
                 for v in variables {
-                    grads.insert(v.to_string(), lhs.grads.borrow()[*v] * rhs.value.get() + lhs.value.get() * rhs.grads.borrow()[*v]);
+                    grads.insert(
+                        v.to_string(),
+                        lhs.grads.borrow()[*v] * rhs.value.get()
+                            + lhs.value.get() * rhs.grads.borrow()[*v],
+                    );
                 }
-            },
+            }
             Div(lhs, rhs) => {
                 lhs.backward_ad(variables);
                 rhs.backward_ad(variables);
 
                 for v in variables {
-                    grads.insert(v.to_string(), (lhs.grads.borrow()[*v] * rhs.value.get() - lhs.value.get() * rhs.grads.borrow()[*v]) / (rhs.value.get().powf(2f32)));
+                    grads.insert(
+                        v.to_string(),
+                        (lhs.grads.borrow()[*v] * rhs.value.get()
+                            - lhs.value.get() * rhs.grads.borrow()[*v])
+                            / (rhs.value.get().powf(2f32)),
+                    );
                 }
-            },
+            }
             Pow(lhs, rhs) => {
                 lhs.backward_ad(variables);
 
                 for v in variables {
-                    grads.insert(v.to_string(), rhs * self.value.get().powf(rhs - 1f32) * lhs.grads.borrow()[*v]);
+                    grads.insert(
+                        v.to_string(),
+                        rhs * self.value.get().powf(rhs - 1f32) * lhs.grads.borrow()[*v],
+                    );
                 }
-            },
+            }
             Sin(value) => {
                 value.backward_ad(variables);
 
                 for v in variables {
-                    grads.insert(v.to_string(), self.value.get().cos() * value.grads.borrow()[*v]);
+                    grads.insert(
+                        v.to_string(),
+                        self.value.get().cos() * value.grads.borrow()[*v],
+                    );
                 }
-            },
+            }
             Cos(value) => {
                 value.backward_ad(variables);
 
                 for v in variables {
-                    grads.insert(v.to_string(), -self.value.get().sin() * value.grads.borrow()[*v]);
+                    grads.insert(
+                        v.to_string(),
+                        -self.value.get().sin() * value.grads.borrow()[*v],
+                    );
                 }
-            },
+            }
         }
     }
 }
@@ -286,4 +310,3 @@ fn basic_backward_ad() {
     assert_eq!(sub.grads.borrow()["x"], 3.75);
     assert_eq!(sub.grads.borrow()["y"], 8.5);
 }
-
